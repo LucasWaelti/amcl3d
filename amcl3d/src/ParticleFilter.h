@@ -121,6 +121,11 @@ public:
   void init(const int num_particles, const float x_init, const float y_init, const float z_init, const float a_init,
             const float x_dev, const float y_dev, const float z_dev, const float a_dev);
 
+  /**
+   * @brief Log the particle population to /tmp/particles_amcl3d.csv
+   */
+  void log_particles();
+
   /*! \brief This function implements the PF prediction stage.
    * (Translation in X, Y and Z in meters and yaw angle incremenet in rad.)
    *

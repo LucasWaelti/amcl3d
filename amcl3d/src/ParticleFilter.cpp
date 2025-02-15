@@ -16,6 +16,7 @@
  */
 
 #include "ParticleFilter.h"
+#include "csv_logger.hpp"
 
 namespace amcl3d
 {
@@ -92,6 +93,48 @@ void ParticleFilter::init(const int num_particles, const float x_init, const flo
   mean_ = mean_p;
 
   initialized_ = true;
+}
+
+void ParticleFilter::log_particles(){
+
+  double current_time = ros::Time::now().toSec();
+  static const std::string csv_file = "particles_amcl3d.csv";
+  static CSVLogger logger;
+
+  float total_weight = 0.0f; // DEBUG 
+
+  static bool logger_init = false;
+  if(!logger_init){
+    if(-1==logger.init(csv_file, "time, particle_index, x, y, z, qx, qy, qz, qw, weight")){
+      throw std::runtime_error("Error initializing logger");
+    }
+    assert(logger.is_file_opened(csv_file) && "File not opened");
+    assert(logger.file_streams.size()>=0 && "No file streams");
+    logger_init = true;
+    ROS_DEBUG("File opened: %s", csv_file.c_str());
+  }
+
+  for (int i = 0; i < (int)p_.size(); i++)
+  {
+
+    total_weight += p_[i].w; // DEBUG
+
+    bool success = logger.log(csv_file,
+      current_time, i,
+      p_[i].x, p_[i].y, p_[i].z, 
+      0.0f, 0.0f, sin(p_[i].a * 0.5f), cos(p_[i].a * 0.5f), 
+      p_[i].w);
+
+    if(!success){
+      throw std::runtime_error("Error logging to file buffer");
+    }
+  }
+  if(!logger.flush()){
+    throw std::runtime_error("Error flushing to file");
+  }
+  ROS_DEBUG("Logged %d particles to %s", (int)p_.size(), csv_file.c_str());
+
+  ROS_INFO("Mean particle weight: %f", total_weight/(float)p_.size());
 }
 
 void ParticleFilter::predict(const double odom_x_mod, const double odom_y_mod, const double odom_z_mod,

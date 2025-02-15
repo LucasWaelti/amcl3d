@@ -167,6 +167,9 @@ void Node::pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
   elapsed_secs = double(end_update - begin_update) / CLOCKS_PER_SEC;
   ROS_DEBUG("Update time: [%lf] sec", elapsed_secs);
 
+  // Log the particle population to a file
+  pf_.log_particles();
+
   mean_p_ = pf_.getMean();
 
   /* Clean the range buffer */
