@@ -98,10 +98,16 @@ void ParticleFilter::predict(const double odom_x_mod, const double odom_y_mod, c
                              const double odom_a_mod, const double delta_x, const double delta_y, const double delta_z,
                              const double delta_a)
 {
-  const double x_dev = fabs(delta_x * odom_x_mod);
-  const double y_dev = fabs(delta_y * odom_y_mod);
-  const double z_dev = fabs(delta_z * odom_z_mod);
-  const double a_dev = fabs(delta_a * odom_a_mod);
+  // HACK Set std_dev independent from the odometry thresholds
+  const double x_dev = fabs(delta_x * 0.1);
+  const double y_dev = fabs(delta_y * 0.1);
+  const double z_dev = fabs(delta_z * 0.1);
+  const double a_dev = fabs(delta_a * 0.1);
+  // Origing approach
+  // const double x_dev = fabs(delta_x * odom_x_mod);
+  // const double y_dev = fabs(delta_y * odom_y_mod);
+  // const double z_dev = fabs(delta_z * odom_z_mod);
+  // const double a_dev = fabs(delta_a * odom_a_mod);
 
   /*  Make a prediction for all particles according to the odometry */
   float sa, ca, rand_x, rand_y;

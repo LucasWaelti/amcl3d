@@ -66,7 +66,7 @@ void Node::spin()
   range_markers_pub_ = nh_.advertise<visualization_msgs::Marker>("range", 0);
   odom_base_pub_ = nh_.advertise<geometry_msgs::TransformStamped>("base_transform", 1);
 
-  cloud_filter_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("pointcloud_filtered", 0);
+  cloud_filter_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("pointcloud_filtered", 0); // FLAG This is the filtered point cloud "/laser_sensor"
 
   while (ros::ok())
   {
@@ -120,8 +120,10 @@ void Node::pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
   }
 
   /* Check if an update must be performed or not */
-  if (!checkUpdateThresholds())
+  if (!checkUpdateThresholds()){
+    ROS_DEBUG("Update threshold not reached"); 
     return;
+  }
 
   static const ros::Duration update_interval(1.0 / parameters_.update_rate_);
   nextupdate_time_ = ros::Time::now() + update_interval;
@@ -131,6 +133,7 @@ void Node::pointcloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_src(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(*msg, *cloud_src);
   pcl::VoxelGrid<pcl::PointXYZ> sor;
+  cloud_src->is_dense = false; // FIX if not set to false, the voxelgrid filter does weird stuff
   sor.setInputCloud(cloud_src);
   sor.setLeafSize(parameters_.voxel_size_, parameters_.voxel_size_, parameters_.voxel_size_);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_down(new pcl::PointCloud<pcl::PointXYZ>);
@@ -218,9 +221,9 @@ void Node::odomCallback(const geometry_msgs::TransformStampedConstPtr& msg)
   double yaw;
   base_2_odom_tf_.getBasis().getRPY(roll_, pitch_, yaw);
 
-  static tf::TransformBroadcaster tf_br;
-  tf_br.sendTransform(
-      tf::StampedTransform(base_2_odom_tf_, ros::Time::now(), parameters_.odom_frame_id_, parameters_.base_frame_id_));
+  static tf::TransformBroadcaster tf_br; // FLAG this is the tf broadcaster
+  // HACK tf_br.sendTransform(
+  //     tf::StampedTransform(base_2_odom_tf_, ros::Time::now(), parameters_.odom_frame_id_, parameters_.base_frame_id_));
 
   if (!is_odom_)
   {
@@ -317,8 +320,8 @@ void Node::odomCallback(const geometry_msgs::TransformStampedConstPtr& msg)
   odom_2_base_tf.transform.rotation.w = lastbase_2_world_tf_.getRotation().getW();
   odom_base_pub_.publish(odom_2_base_tf);
 
-  tf_br.sendTransform(tf::StampedTransform(lastodom_2_world_tf_, ros::Time::now(), parameters_.global_frame_id_,
-                                           parameters_.odom_frame_id_));
+  // HACK tf_br.sendTransform(tf::StampedTransform(lastodom_2_world_tf_, ros::Time::now(), parameters_.global_frame_id_,
+  //                                          parameters_.odom_frame_id_));
 
   ROS_DEBUG("odomCallback close");
 }
